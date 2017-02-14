@@ -13,18 +13,15 @@
  *
  */
 @protocol LDNetDiagnoServiceDelegate <NSObject>
-/**
- * 告诉调用者诊断开始
- */
-- (void)netDiagnosisDidStarted;
-
-
+@optional
 /**
  * 逐步返回监控信息，
  * 如果需要实时显示诊断数据，实现此接口方法
  */
-- (void)netDiagnosisStepInfo:(NSString *)stepInfo;
+- (void)diagnosisStepInfo:(NSString *)stepInfo;
 
+
+- (void)netDiagnosisDidStarted;
 
 /**
  * 因为监控过程是一个异步过程，当监控结束后告诉调用者；
@@ -41,26 +38,29 @@
  */
 @interface LDNetDiagnoService : NSObject {
 }
-@property (nonatomic, weak) id<LDNetDiagnoServiceDelegate> delegate;      //向调用者输出诊断信息接口
+@property (nonatomic, weak) id<LDNetDiagnoServiceDelegate> delegate;
 @property (nonatomic, copy) NSArray *domains;  //接口域名
 @property (nonatomic, copy) NSString *userId;  //用户id
+@property (nonatomic, copy) NSString *uuid;    //默认取identifierForVendor
 @property (nonatomic) BOOL needTraceRoute;
 
 /**
- * 开始诊断网络
+ * 开始完整诊断，包括基本信息和网络两部分
+ */
+- (void)startCompleteDiagnosis;
+
+/**
+ * 仅获取应用和设备基本信息
+ */
+- (void)getBasicInfo;
+/**
+ * 仅进行网络诊断
  */
 - (void)startNetDiagnosis;
 
-
 /**
- * 停止诊断网络
+ * 停止网络诊断
  */
 - (void)stopNetDialogsis;
-
-
-/**
- * 打印整体loginInfo；
- */
-- (void)printLogInfo;
 
 @end

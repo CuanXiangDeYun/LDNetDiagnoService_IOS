@@ -96,7 +96,7 @@
         _txtView_log.text = @"";
         _logInfo = @"";
         _isRunning = !_isRunning;
-        [_netDiagnoService startNetDiagnosis];
+        [_netDiagnoService startCompleteDiagnosis];
     } else {
         [_indicatorView stopAnimating];
         _isRunning = !_isRunning;
@@ -147,12 +147,6 @@
         _isRunning = NO;
     });
 }
-
-- (void)emailLogInfo
-{
-    [_netDiagnoService printLogInfo];
-}
-
 
 #pragma mark -
 #pragma mark - textFieldDelegate
