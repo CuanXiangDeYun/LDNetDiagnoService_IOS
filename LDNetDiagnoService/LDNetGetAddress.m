@@ -213,7 +213,7 @@
 /*!
  * 通过hostname获取ip列表 DNS解析地址
  */
-+ (NSArray *)getDNSsWithDormain:(NSString *)hostName{
++ (NSArray *)getDNSsWithDomain:(NSString *)hostName{
     NSMutableArray *result = [[NSMutableArray alloc] init];
     NSArray *IPV4DNSs = [self getIPV4DNSWithHostName:hostName];
     if (IPV4DNSs && IPV4DNSs.count > 0) {

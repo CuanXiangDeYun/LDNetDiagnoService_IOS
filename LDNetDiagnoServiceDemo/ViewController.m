@@ -13,11 +13,12 @@
     UIActivityIndicatorView *_indicatorView;
     UIButton *btn;
     UITextView *_txtView_log;
-    UITextField *_txtfield_dormain;
+    UITextField *_txtfield_domain;
 
     NSString *_logInfo;
     LDNetDiagnoService *_netDiagnoService;
     BOOL _isRunning;
+    NSArray *_domains;
 }
 
 @end
@@ -29,6 +30,7 @@
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor whiteColor];
     self.navigationItem.title = @"网络诊断Demo";
+    _domains = @[@"www.baidu.com", @"www.taobao.com", @"www.jianshu.com"];
 
     _indicatorView = [[UIActivityIndicatorView alloc]
         initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
@@ -53,12 +55,12 @@
     [self.view addSubview:btn];
 
 
-    _txtfield_dormain =
+    _txtfield_domain =
         [[UITextField alloc] initWithFrame:CGRectMake(130.0f, 79.0f, 180.0f, 50.0f)];
-    _txtfield_dormain.delegate = self;
-    _txtfield_dormain.returnKeyType = UIReturnKeyDone;
-    _txtfield_dormain.text = @"www.baidu.com";
-    [self.view addSubview:_txtfield_dormain];
+    _txtfield_domain.delegate = self;
+    _txtfield_domain.returnKeyType = UIReturnKeyDone;
+    _txtfield_domain.text = [_domains componentsJoinedByString:@","];
+    [self.view addSubview:_txtfield_domain];
 
 
     _txtView_log = [[UITextView alloc] initWithFrame:CGRectZero];
@@ -74,25 +76,17 @@
     [self.view addSubview:_txtView_log];
 
     // Do any additional setup after loading the view, typically from a nib.
-    _netDiagnoService = [[LDNetDiagnoService alloc] initWithAppCode:@"test"
-                                                            appName:@"网络诊断应用"
-                                                         appVersion:@"1.0.0"
-                                                             userID:@"huipang@corp.netease.com"
-                                                           deviceID:nil
-                                                            dormain:_txtfield_dormain.text
-                                                        carrierName:nil
-                                                     ISOCountryCode:nil
-                                                  MobileCountryCode:nil
-                                                      MobileNetCode:nil];
+    _netDiagnoService = [[LDNetDiagnoService alloc] init];
     _netDiagnoService.delegate = self;
+//    _netDiagnoService.needTraceRoute = YES;
     _isRunning = NO;
 }
 
 
 - (void)startNetDiagnosis
 {
-    [_txtfield_dormain resignFirstResponder];
-    _netDiagnoService.dormain = _txtfield_dormain.text;
+    [_txtfield_domain resignFirstResponder];
+    _netDiagnoService.domains = [_txtfield_domain.text componentsSeparatedByString:@","];
     if (!_isRunning) {
         [_indicatorView startAnimating];
         [btn setTitle:@"停止诊断" forState:UIControlStateNormal];

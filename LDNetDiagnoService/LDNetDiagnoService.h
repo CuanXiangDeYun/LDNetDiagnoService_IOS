@@ -41,25 +41,10 @@
  */
 @interface LDNetDiagnoService : NSObject {
 }
-@property (nonatomic, weak, readwrite)
-    id<LDNetDiagnoServiceDelegate> delegate;      //向调用者输出诊断信息接口
-@property (nonatomic, retain) NSString *dormain;  //接口域名
-
-/**
- * 初始化网络诊断服务
- * theAppCode,theUID, theDormain为必填项
- */
-- (id)initWithAppCode:(NSString *)theAppCode
-              appName:(NSString *)theAppName
-           appVersion:(NSString *)theAppVersion
-               userID:(NSString *)theUID
-             deviceID:(NSString *)theDeviceID
-              dormain:(NSString *)theDormain
-          carrierName:(NSString *)theCarrierName
-       ISOCountryCode:(NSString *)theISOCountryCode
-    MobileCountryCode:(NSString *)theMobileCountryCode
-        MobileNetCode:(NSString *)theMobileNetCode;
-
+@property (nonatomic, weak) id<LDNetDiagnoServiceDelegate> delegate;      //向调用者输出诊断信息接口
+@property (nonatomic, copy) NSArray *domains;  //接口域名
+@property (nonatomic, copy) NSString *userId;  //用户id
+@property (nonatomic) BOOL needTraceRoute;
 
 /**
  * 开始诊断网络

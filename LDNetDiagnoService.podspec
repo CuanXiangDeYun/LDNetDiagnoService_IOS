@@ -14,4 +14,5 @@ Pod::Spec.new do |s|
   s.ios.source_files = 'LDNetDiagnoService/*.{h,m}'
   s.ios.framework = 'CoreTelephony'
   s.ios.library = 'resolv'
+  s.dependency 'SDVersion', '~> 3.0'
 end

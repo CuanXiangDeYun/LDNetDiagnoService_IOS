@@ -36,7 +36,7 @@ typedef enum {
 /*!
  * 通过域名获取服务器DNS地址
  */
-+ (NSArray *)getDNSsWithDormain:(NSString *)hostName;
++ (NSArray *)getDNSsWithDomain:(NSString *)hostName;
 
 
 /*!

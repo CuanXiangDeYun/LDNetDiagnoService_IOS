@@ -11,8 +11,6 @@
 #import "LDNetPing.h"
 #import "LDNetTimer.h"
 
-#define MAXCOUNT_PING 4
-
 @interface LDNetPing () {
     BOOL _isStartSuccess; //监测第一次ping是否成功
     int _sendCount;  //当前执行次数
@@ -30,6 +28,14 @@
 @implementation LDNetPing
 @synthesize pinger = _pinger;
 
+- (instancetype)init
+{
+    self = [super init];
+    if (self) {
+        self.count = 6;
+    }
+    return self;
+}
 
 - (void)dealloc
 {
@@ -44,7 +50,7 @@
 {
     [self->_pinger stop];
     self.pinger = nil;
-    _sendCount = MAXCOUNT_PING + 1;
+    _sendCount = self.count + 1;
 }
 
 
@@ -65,7 +71,7 @@
     _sendCount = 1;
     do {
         [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
-    } while (self.pinger != nil || _sendCount <= MAXCOUNT_PING);
+    } while (self.pinger != nil || _sendCount <= self.count);
 }
 
 
@@ -78,7 +84,7 @@
     if (timer) {
         [timer invalidate];
     }
-    if (_sendCount > MAXCOUNT_PING) {
+    if (_sendCount > self.count) {
         _sendCount++;
         self.pinger = nil;
         if (self.delegate && [self.delegate respondsToSelector:@selector(netPingDidEnd)]) {
@@ -111,7 +117,7 @@
 
 - (void)pingTimeout:(NSTimer *)index
 {
-    if ([[index userInfo] intValue] == _sendCount && _sendCount <= MAXCOUNT_PING + 1 &&
+    if ([[index userInfo] intValue] == _sendCount && _sendCount <= self.count + 1 &&
         _sendCount > 1) {
         NSString *timeoutLog =
             [NSString stringWithFormat:@"ping: cannot resolve %@: TimeOut", _hostAddress];

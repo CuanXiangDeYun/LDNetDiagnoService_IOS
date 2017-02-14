@@ -42,7 +42,7 @@
 - (Boolean)doTraceRoute:(NSString *)host
 {
     //从name server获取server主机的地址
-    NSArray *serverDNSs = [LDNetGetAddress getDNSsWithDormain:host];
+    NSArray *serverDNSs = [LDNetGetAddress getDNSsWithDomain:host];
     if (!serverDNSs || serverDNSs.count <= 0) {
         if (_delegate != nil) {
             [_delegate appendRouteLog:@"TraceRoute>>> Could not get host address"];

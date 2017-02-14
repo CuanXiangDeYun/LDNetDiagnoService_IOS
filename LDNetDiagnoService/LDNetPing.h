@@ -30,6 +30,7 @@
 }
 
 @property (nonatomic, weak, readwrite) id<LDNetPingDelegate> delegate;
+@property (nonatomic) int count;
 
 /**
  * 通过hostname 进行ping诊断
