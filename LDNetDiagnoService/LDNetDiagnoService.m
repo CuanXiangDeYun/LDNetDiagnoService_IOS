@@ -30,15 +30,14 @@
     LDNetTraceRoute *_traceRouter;
     
     NSInteger _diagnosisDomainIndex;
+    BOOL _hasFetchedNetType;
 }
 
 @end
 
 @implementation LDNetDiagnoService
 #pragma mark - public method
-/**
- * 初始化网络诊断服务
- */
+
 - (instancetype)init {
     self = [super init];
     if (self) {
@@ -49,45 +48,21 @@
     return self;
 }
 
-/**
- * 开始诊断网络
- */
-- (void)startNetDiagnosis
+- (void)startCompleteDiagnosis
 {
-    if (_domains.count == 0) return;
-    
-    if ([self.delegate respondsToSelector:@selector(netDiagnosisDidStarted)]) {
-        [self.delegate netDiagnosisDidStarted];
+    if (_isRunning || _domains.count == 0) {
+        return;
     }
-
+    
     _isRunning = YES;
+
     [_logInfo setString:@""];
     [self recordStepInfo:@"开始诊断\n"];
-    [self recordCurrentTime];
-    [self recordUser];
-    [self recordCurrentAppVersion];
     
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        [self recordLocalNetEnvironment]; //检测外网时用了一个同步请求
-        
-        //未联网不进行任何检测
-        if (_curNetType == 0) {
-            _isRunning = NO;
-            [self recordStepInfo:@"\n当前主机未联网，请检查网络！"];
-            [self recordStepInfo:@"\n网络诊断结束\n"];
-            if ([self.delegate respondsToSelector:@selector(netDiagnosisDidEnd:)]) {
-                [self.delegate netDiagnosisDidEnd:_logInfo];
-            }
-            return;
-        }
-        
-        [self dialogsisEachDomain];
-    });
+    [self getBasicInfo];
+    [self startNetDiagnosis];
 }
 
-/**
- * 停止诊断网络, 清空诊断状态
- */
 - (void)stopNetDialogsis
 {
     _diagnosisDomainIndex = 0;
@@ -108,15 +83,43 @@
     }
 }
 
-
-/**
- * 打印整体loginInfo；
- */
-- (void)printLogInfo
-{
-    NSLog(@"\n%@\n", _logInfo);
+- (void)getBasicInfo {
+    [self recordCurrentTime];
+    [self recordUser];
+    [self recordAppVersion];
+    [self recordDeviceInfo];
+    [self recordNetType];
 }
 
+- (void)startNetDiagnosis {
+    _isRunning = YES;
+    
+    [self recordStepInfo:@"\n开始网络诊断"];
+    
+    if ([self.delegate respondsToSelector:@selector(netDiagnosisDidStarted)]) {
+        [self.delegate netDiagnosisDidStarted];
+    }
+    
+    if (!_hasFetchedNetType) {
+        [self recordNetType];
+    }
+    
+    //未联网不进行任何检测
+    if (_curNetType == 0) {
+        _isRunning = NO;
+        [self recordStepInfo:@"\n当前主机未联网，请检查网络！"];
+        [self recordStepInfo:@"\n网络诊断结束\n"];
+        if ([self.delegate respondsToSelector:@selector(netDiagnosisDidEnd:)]) {
+            [self.delegate netDiagnosisDidEnd:_logInfo];
+        }
+        return;
+    }
+    
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        [self recordLocalNetEnvironment]; //检测外网时用了一个同步请求
+        [self dialogsisEachDomain];
+    });
+}
 
 #pragma mark -
 #pragma mark - private method
@@ -143,7 +146,7 @@
 /*!
  *  @brief  获取App相关信息
  */
-- (void)recordCurrentAppVersion
+- (void)recordAppVersion
 {
     //输出应用和设备信息
     NSDictionary *dicBundle = [[NSBundle mainBundle] infoDictionary];
@@ -151,14 +154,16 @@
     [self recordStepInfo:[NSString stringWithFormat:@"应用名称: %@", dicBundle[@"CFBundleDisplayName"]]];
     [self recordStepInfo:[NSString stringWithFormat:@"应用版本: %@", dicBundle[@"CFBundleShortVersionString"]]];
     [self recordStepInfo:[NSString stringWithFormat:@"Build: %@", dicBundle[@"CFBundleVersion"]]];
+}
 
+- (void)recordDeviceInfo {
     //输出机器信息
     UIDevice *device = [UIDevice currentDevice];
     [self recordStepInfo:[NSString stringWithFormat:@"设备型号: %@", DeviceVersionNames[[SDVersion deviceVersion]]]];
     [self recordStepInfo:[NSString stringWithFormat:@"系统版本: %@", [device systemVersion]]];
-    [self recordStepInfo:[NSString stringWithFormat:@"UUID: %@", [[[UIDevice currentDevice] identifierForVendor] UUIDString]]];
+    [self recordStepInfo:[NSString stringWithFormat:@"UUID: %@", self.uuid ?: [[[UIDevice currentDevice] identifierForVendor] UUIDString]]];
     [self recordStepInfo:[NSString stringWithFormat:@"是否越狱: %@", [LDJailbreak isJailbroken] ? @"YES" : @"NO"]];
-
+    
     //运营商信息
     CTTelephonyNetworkInfo *netInfo = [[CTTelephonyNetworkInfo alloc] init];
     CTCarrier *carrier = [netInfo subscriberCellularProvider];
@@ -167,11 +172,7 @@
     }
 }
 
-/*!
- *  @brief  获取本地网络环境信息
- */
-- (void)recordLocalNetEnvironment
-{
+- (void)recordNetType {
     //判断是否联网以及获取网络类型
     NSArray *typeArr = [NSArray arrayWithObjects:@"2G", @"3G", @"4G", @"5G", @"WiFi", nil];
     _curNetType = [LDNetGetAddress getNetworkTypeFromStatusBar];
@@ -183,7 +184,15 @@
             [self recordStepInfo:[NSString stringWithFormat:@"当前联网类型: %@", [typeArr objectAtIndex:_curNetType - 1]]];
         }
     }
+    
+    _hasFetchedNetType = YES;
+}
 
+/*!
+ *  @brief  获取本地网络环境信息
+ */
+- (void)recordLocalNetEnvironment
+{
     //外网ip
     NSURL *url = [NSURL URLWithString:@"https://api.ipify.org/"];
     NSString *ip = [NSString stringWithContentsOfURL:url encoding:NSUTF8StringEncoding error:nil];
@@ -309,8 +318,8 @@
     [_logInfo appendString:stepInfo];
     [_logInfo appendString:@"\n"];
 
-    if (self.delegate && [self.delegate respondsToSelector:@selector(netDiagnosisStepInfo:)]) {
-        [self.delegate netDiagnosisStepInfo:[NSString stringWithFormat:@"%@\n", stepInfo]];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(diagnosisStepInfo:)]) {
+        [self.delegate diagnosisStepInfo:[NSString stringWithFormat:@"%@\n", stepInfo]];
     }
 }
 
