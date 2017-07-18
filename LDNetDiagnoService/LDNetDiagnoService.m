@@ -14,7 +14,7 @@
 #import "LDNetGetAddress.h"
 #import "LDNetTimer.h"
 #import "LDNetConnect.h"
-#import <SDVersion.h>
+#import "SDVersion.h"
 #import "LDJailbreak.h"
 
 @interface LDNetDiagnoService () <LDNetPingDelegate, LDNetTraceRouteDelegate> {
