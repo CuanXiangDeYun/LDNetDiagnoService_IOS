@@ -8,15 +8,15 @@
 
 #import <Foundation/Foundation.h>
 #import "LDSimplePing.h"
-
+#import "LDMTRHop.h"
 
 /*
  * @protocal LDNetPingDelegate监测Ping命令的的输出到日志变量；
  *
  */
 @protocol LDNetPingDelegate <NSObject>
-- (void)appendPingLog:(NSString *)pingLog;
 - (void)netPingDidEnd;
+- (void)appendPingLog:(NSString *)log;
 @end
 
 
@@ -35,7 +35,7 @@
 /**
  * 通过hostname 进行ping诊断
  */
-- (void)runWithHostName:(NSString *)hostName normalPing:(BOOL)normalPing;
+- (void)runWithHop:(LDMTRHop *)hop;
 
 /**
  * 停止当前ping动作

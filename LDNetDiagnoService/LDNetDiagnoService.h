@@ -42,7 +42,6 @@
 @property (nonatomic, copy) NSArray *domains;  //接口域名
 @property (nonatomic, copy) NSString *userId;  //用户id
 @property (nonatomic, copy) NSString *uuid;    //默认取identifierForVendor
-@property (nonatomic) BOOL needTraceRoute;
 
 /**
  * 开始完整诊断，包括基本信息和网络两部分
