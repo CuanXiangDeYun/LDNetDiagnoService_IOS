@@ -21,7 +21,7 @@
 }
 
 @property (nonatomic, strong, readwrite) LDSimplePing *pinger;
-
+@property (strong, nonatomic) LDMTRHop *hop;
 @end
 
 
@@ -53,6 +53,10 @@
     _sendCount = self.count + 1;
 }
 
+- (void)runWithHop:(LDMTRHop *)hop {
+    self.hop = hop;
+    [self runWithHostName:hop.hostAddr normalPing:YES];
+}
 
 /*
  * 调用pinger解析指定域名
@@ -124,6 +128,7 @@
         if (self.delegate && [self.delegate respondsToSelector:@selector(appendPingLog:)]) {
             [self.delegate appendPingLog:timeoutLog];
         }
+        [self.hop addRTT:-1];
         [self sendPing];
     }
 }
@@ -158,9 +163,7 @@
 #pragma unused(error)
     NSString *failCreateLog = [NSString stringWithFormat:@"#%u try create failed: %@", _sendCount,
                                                          [self shortErrorFromError:error]];
-    if (self.delegate && [self.delegate respondsToSelector:@selector(appendPingLog:)]) {
-        [self.delegate appendPingLog:failCreateLog];
-    }
+    [self.hop addRTT:-1];
 
     //如果不是创建套接字失败，都是发送数据过程中的错误,可以继续try发送数据
     if (_isStartSuccess) {
@@ -199,7 +202,7 @@
     if (self.delegate && [self.delegate respondsToSelector:@selector(appendPingLog:)]) {
         [self.delegate appendPingLog:sendFailLog];
     }
-
+    [self.hop addRTT:-1];
     [self sendPing];
 }
 
@@ -215,17 +218,18 @@
     //由于IPV6在IPheader中不返回TTL数据，所以这里不返回TTL，改为返回Type
     //http://blog.sina.com.cn/s/blog_6a1837e901012ds8.html
     NSString *icmpReplyType = [NSString stringWithFormat:@"%@", [LDSimplePing icmpInPacket:packet]->type == 129 ? @"ICMPv6TypeEchoReply" : @"ICMPv4TypeEchoReply"];
+    long time = [LDNetTimer computeDurationSince:_startTime];
     NSString *successLog = [NSString
         stringWithFormat:@"%lu bytes from %@ icmp_seq=#%u type=%@ time=%ldms",
                          (unsigned long)[packet length], _hostAddress,
                          sequenceNumber,
                          icmpReplyType,
-                         [LDNetTimer computeDurationSince:_startTime] / 1000];
+                         time / 1000];
     //记录ping成功的数据
     if (self.delegate && [self.delegate respondsToSelector:@selector(appendPingLog:)]) {
         [self.delegate appendPingLog:successLog];
     }
-
+    [self.hop addRTT:time];
     [self sendPing];
 }
 

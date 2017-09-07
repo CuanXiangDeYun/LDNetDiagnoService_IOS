@@ -10,14 +10,14 @@
 #import <CoreTelephony/CTTelephonyNetworkInfo.h>
 #import "LDNetDiagnoService.h"
 #import "LDNetPing.h"
-#import "LDNetTraceRoute.h"
 #import "LDNetGetAddress.h"
 #import "LDNetTimer.h"
 #import "LDNetConnect.h"
 #import "SDVersion.h"
 #import "LDJailbreak.h"
+#import "LDNetMTR.h"
 
-@interface LDNetDiagnoService () <LDNetPingDelegate, LDNetTraceRouteDelegate> {
+@interface LDNetDiagnoService () <LDNetPingDelegate, LDNetMTRDelegate> {
     NETWORK_TYPE _curNetType;
     NSString *_localIp;
     NSString *_gatewayIp;
@@ -26,8 +26,7 @@
 
     NSMutableString *_logInfo;  //记录网络诊断log日志
     BOOL _isRunning;
-    LDNetPing *_netPinger;
-    LDNetTraceRoute *_traceRouter;
+    LDNetMTR *_mtr;
     
     NSInteger _diagnosisDomainIndex;
     BOOL _hasFetchedNetType;
@@ -69,12 +68,8 @@
     if (_isRunning) {
         _isRunning = NO;
 
-        if (_netPinger) {
-            [_netPinger stopPing];
-        }
-
-        if (_traceRouter) {
-            [_traceRouter stopTrace];
+        if (_mtr) {
+            [_mtr stopMTR];
         }
     }
     [self recordStepInfo:@"\n诊断结束"];
@@ -232,74 +227,26 @@
         }
         
         if (_isRunning) {
-            [self pingDialogsis];
+            [self mtrDialogsis];
         }
     }
 }
 
-/**
- * 构建ping列表并进行ping诊断
- */
-- (void)pingDialogsis
+- (void)mtrDialogsis
 {
-    if (!_netPinger) {
-        _netPinger = [[LDNetPing alloc] init];
-        _netPinger.delegate = self;
+    if (!_mtr) {
+        _mtr = [LDNetMTR new];
+        _mtr.delegate = self;
     }
-    
-    [self recordStepInfo:@"开始ping..."];
-    [_netPinger runWithHostName:self.currentDomain normalPing:YES];
+    [_mtr mtrWithHost:self.currentDomain];
 }
 
-- (void)tracerouteDialogsis {
-    if (_isRunning) {
-        //开始诊断traceRoute
-        [self recordStepInfo:@"开始traceroute..."];
-        if (!_traceRouter) {
-            _traceRouter = [[LDNetTraceRoute alloc] initWithMaxTTL:TRACEROUTE_MAX_TTL
-                                                           timeout:TRACEROUTE_TIMEOUT
-                                                       maxAttempts:TRACEROUTE_ATTEMPTS
-                                                              port:TRACEROUTE_PORT];
-            _traceRouter.delegate = self;
-        }
-        if (_traceRouter) {
-            [NSThread detachNewThreadSelector:@selector(doTraceRoute:)
-                                     toTarget:_traceRouter
-                                   withObject:self.currentDomain];
-        }
-    }
+#pragma mark - mtrDelegate
+- (void)appendMTRLog:(NSString *)mtrLog {
+    [self recordStepInfo:mtrLog];
 }
 
-#pragma mark -
-#pragma mark - netPingDelegate
-
-- (void)appendPingLog:(NSString *)pingLog
-{
-    [self recordStepInfo:pingLog];
-}
-
-- (void)netPingDidEnd
-{
-    if (self.needTraceRoute) {
-        [self tracerouteDialogsis];
-    } else {
-        if (_diagnosisDomainIndex >= _domains.count - 1) {
-            [self stopNetDialogsis];
-        } else {
-            _diagnosisDomainIndex++;
-            [self dialogsisEachDomain];
-        }
-    }
-}
-
-#pragma mark - traceRouteDelegate
-- (void)appendRouteLog:(NSString *)routeLog
-{
-    [self recordStepInfo:routeLog];
-}
-
-- (void)traceRouteDidEnd
-{
+- (void)mtrDidEnd {
     if (_diagnosisDomainIndex >= _domains.count - 1) {
         [self stopNetDialogsis];
     } else {

@@ -134,6 +134,7 @@ static uint16_t in_cksum(const void *buffer, size_t bufferLen) {
     if (self != nil) {
         self->_hostName   = [hostName copy];
         self->_identifier = (uint16_t) arc4random();
+        self.packetCountPerPing = 1;
     }
     return self;
 }
@@ -231,6 +232,27 @@ static uint16_t in_cksum(const void *buffer, size_t bufferLen) {
     return packet;
 }
 
+- (void)setTimeout:(long)sec
+{
+    struct timeval tv;
+    tv.tv_sec  = sec;
+    tv.tv_usec = 0;//1000000 * sec; // 0.1 sec
+    setsockopt(CFSocketGetNative(self.socket), SOL_SOCKET, SO_SNDTIMEO, (void *)&tv, sizeof(tv));
+    int ret = setsockopt(CFSocketGetNative(self.socket), SOL_SOCKET, SO_RCVTIMEO, (void *)&tv, sizeof(tv));
+    NSLog(@"set recv timeout %d err %d", ret, errno);
+}
+
+- (void)setTTL:(int)ttl
+{
+    [self setTimeout:3];
+    setsockopt(CFSocketGetNative(self.socket), IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
+    
+}
+
+- (void)sendPing {
+    [self sendPingWithData:nil];
+}
+
 /**
  * 通过ping的套接口发送数据
  */
@@ -276,14 +298,16 @@ static uint16_t in_cksum(const void *buffer, size_t bufferLen) {
         bytesSent = -1;
         err = EBADF;
     } else {
-        bytesSent = sendto(
-                           CFSocketGetNative(self.socket),
-                           packet.bytes,
-                           packet.length,
-                           0,
-                           self.hostAddress.bytes,
-                           (socklen_t) self.hostAddress.length
-                           );
+        for (int i = 0; i < self.packetCountPerPing; i++) {
+            bytesSent = sendto(
+                               CFSocketGetNative(self.socket),
+                               packet.bytes,
+                               packet.length,
+                               0,
+                               self.hostAddress.bytes,
+                               (socklen_t) self.hostAddress.length
+                               );
+        }
         err = 0;
         if (bytesSent < 0) {
             err = errno;
@@ -348,6 +372,20 @@ static uint16_t in_cksum(const void *buffer, size_t bufferLen) {
         }
     }
     return result;
+}
+
+- (NSString *)srcAddrInIPv4Packet:(NSData *)packet {
+    // Returns the offset of the ICMPv4Header within an IP packet.
+    NSUInteger                  result;
+    const struct IPv4Header *   ipPtr;
+    NSString                    *msg;
+    
+    result = NSNotFound;
+    if (packet.length >= (sizeof(IPv4Header) + sizeof(ICMPHeader))) {
+        ipPtr = (const IPv4Header *) packet.bytes;
+        msg = [NSString stringWithFormat:@"%d.%d.%d.%d", ipPtr->sourceAddress[0], ipPtr->sourceAddress[1], ipPtr->sourceAddress[2], ipPtr->sourceAddress[3]];
+    }
+    return msg;
 }
 
 /*! Checks whether the specified sequence number is one we sent.

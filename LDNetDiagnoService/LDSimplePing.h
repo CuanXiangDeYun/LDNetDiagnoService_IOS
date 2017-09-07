@@ -45,6 +45,8 @@ typedef NS_ENUM(NSInteger, SimplePingAddressStyle) {
 /*! A copy of the value passed to `-initWithHostName:`.
  */
 @property (nonatomic, copy, readonly) NSString *hostName;
+@property (nonatomic) NSInteger packetCountPerPing;
+
 
 /*! The delegate for this object.
  *  \details Delegate callbacks are schedule in the default run loop mode of the run loop of the
@@ -117,6 +119,10 @@ typedef NS_ENUM(NSInteger, SimplePingAddressStyle) {
  */
 
 - (void)sendPingWithData:(nullable NSData *)data;
+
+- (NSString *)srcAddrInIPv4Packet:(NSData *)packet;
+- (void)setTTL:(int)ttl;
+- (void)sendPing;
 
 /*! Stops the object.
  *  \details You should call this when you're done pinging.
