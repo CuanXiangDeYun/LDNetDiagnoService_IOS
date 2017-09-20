@@ -18,11 +18,7 @@
 #import <sys/sysctl.h>
 #import <netinet/in.h>
 
-#if TARGET_IPHONE_SIMULATOR
-#include <net/route.h>
-#else
 #include "Route.h"
-#endif /*the very same from google-code*/
 
 #define ROUNDUP(a) ((a) > 0 ? (1 + (((a)-1) | (sizeof(long) - 1))) : sizeof(long))
 
