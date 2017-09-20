@@ -107,12 +107,3 @@ _netDiagnoService.delegate = self;
 
 * 在网络诊断结束的时候，将日志文件上传；
 
-
-## 技术支持
--------------------
-
-
->
-to be continued ....
-
-庞辉, 电商技术中心，popo：__huipang@corp.netease.com__
