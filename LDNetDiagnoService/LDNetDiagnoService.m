@@ -154,7 +154,7 @@
 - (void)recordDeviceInfo {
     //输出机器信息
     UIDevice *device = [UIDevice currentDevice];
-    [self recordStepInfo:[NSString stringWithFormat:@"设备型号: %@", DeviceVersionNames[[SDVersion deviceVersion]]]];
+    [self recordStepInfo:[NSString stringWithFormat:@"设备型号: %@", [SDiOSVersion deviceNameString]]];
     [self recordStepInfo:[NSString stringWithFormat:@"系统版本: %@", [device systemVersion]]];
     [self recordStepInfo:[NSString stringWithFormat:@"UUID: %@", self.uuid ?: [[[UIDevice currentDevice] identifierForVendor] UUIDString]]];
     [self recordStepInfo:[NSString stringWithFormat:@"是否越狱: %@", [LDJailbreak isJailbroken] ? @"YES" : @"NO"]];
