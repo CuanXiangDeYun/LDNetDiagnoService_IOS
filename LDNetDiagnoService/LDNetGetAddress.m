@@ -17,8 +17,10 @@
 
 #import <sys/sysctl.h>
 #import <netinet/in.h>
+#import "Reachability.h"
 
 #include "Route.h"
+#import <CoreTelephony/CTTelephonyNetworkInfo.h>
 
 #define ROUNDUP(a) ((a) > 0 ? (1 + (((a)-1) | (sizeof(long) - 1))) : sizeof(long))
 
@@ -327,18 +329,38 @@
  */
 + (NETWORK_TYPE)getNetworkTypeFromStatusBar
 {
-    NSArray *subviews = [[[[UIApplication sharedApplication] valueForKey:@"statusBar"]
-        valueForKey:@"foregroundView"] subviews];
-    NSNumber *dataNetworkItemView = nil;
-    for (id subview in subviews) {
-        if ([subview isKindOfClass:[NSClassFromString(@"UIStatusBarDataNetworkItemView") class]]) {
-            dataNetworkItemView = subview;
-            break;
+    NETWORK_TYPE nettype = NETWORK_TYPE_NONE;
+    Reachability *reachability = [Reachability reachabilityForInternetConnection];
+    NetworkStatus status = [reachability currentReachabilityStatus];
+    
+    if (status == ReachableViaWiFi) {
+        nettype = NETWORK_TYPE_WIFI;
+    } else if (status == ReachableViaWWAN) {
+        CTTelephonyNetworkInfo *netinfo = [[CTTelephonyNetworkInfo alloc] init];
+        if ([netinfo.currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyGPRS]) {
+            nettype = NETWORK_TYPE_2G;
+        } else if ([netinfo.currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyEdge]) {
+            nettype = NETWORK_TYPE_2G;
+        } else if ([netinfo.currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyWCDMA]) {
+            nettype = NETWORK_TYPE_3G;
+        } else if ([netinfo.currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyHSDPA]) {
+            nettype = NETWORK_TYPE_3G;
+        } else if ([netinfo.currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyHSUPA]) {
+            nettype = NETWORK_TYPE_3G;
+        } else if ([netinfo.currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyCDMA1x]) {
+            nettype = NETWORK_TYPE_3G;
+        } else if ([netinfo.currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyCDMAEVDORev0]) {
+            nettype = NETWORK_TYPE_3G;
+        } else if ([netinfo.currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyCDMAEVDORevA]) {
+            nettype = NETWORK_TYPE_3G;
+        } else if ([netinfo.currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyCDMAEVDORevB]) {
+            nettype = NETWORK_TYPE_3G;
+        } else if ([netinfo.currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyeHRPD]) {
+            nettype = NETWORK_TYPE_3G;
+        } else if ([netinfo.currentRadioAccessTechnology isEqualToString:CTRadioAccessTechnologyLTE]) {
+            nettype = NETWORK_TYPE_4G;
         }
     }
-    NETWORK_TYPE nettype = NETWORK_TYPE_NONE;
-    NSNumber *num = [dataNetworkItemView valueForKey:@"dataNetworkType"];
-    nettype = [num intValue];
     return nettype;
 }
 

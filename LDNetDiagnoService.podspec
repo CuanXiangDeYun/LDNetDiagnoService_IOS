@@ -15,4 +15,5 @@ Pod::Spec.new do |s|
   s.ios.framework = 'CoreTelephony'
   s.ios.library = 'resolv'
   s.dependency 'SDVersion'
+  s.dependency 'Reachability'
 end
